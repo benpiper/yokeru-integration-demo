@@ -4,6 +4,19 @@
 
 A production integration agent that connects healthcare EHR systems (FHIR) to the Yokeru voice-agent platform. Designed around the failure modes a real care-team integration sees daily: flaky upstream APIs, partial data, webhook replays, and crash recovery.
 
+## High-Level Overview
+
+**The Problem:** Care teams frequently need to perform routine "welfare checks" by calling patients to ensure they are okay. Doing this manually for hundreds of patients consumes valuable staff time. Automated voice platforms (like Yokeru) can make these calls automatically, but they need to know *who* to call, and the care team needs to know the *outcome* of those calls.
+
+**The Solution:** This software acts as a secure, automated "bridge" between a database (EHR) and an AI voice platform. 
+
+1. **Information Gathering:** It securely reads patient contact information from the database (EHR).
+2. **Tasking the AI:** It sends this information to the voice platform, instructing it to make the calls.
+3. **Closing the Loop:** After the voice platform finishes a call, it sends the results (e.g., patient answered, no answer, or call failed) back to this bridge, which safely records the outcome for the care team.
+
+**Why does it need to be "Resilient"?**
+In the real world, hospital networks go offline, internet connections drop, and servers crash. This software is specifically engineered so that **no patient is ever forgotten or called twice by mistake**. If the system crashes in the middle of its work, it uses a durable local memory to remember exactly where it left off, and safely resumes once everything is back online.
+
 ## What it does
 
 ```mermaid
