@@ -1,0 +1,39 @@
+.git/
+.github/
+.gitignore
+.dockerignore
+
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Test artifacts
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+tests/
+
+# Local state
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Secrets
+.env
+.env.*
+
+# Docs / scratch
+README.md
+LICENSE
+Makefile
+*.sh
