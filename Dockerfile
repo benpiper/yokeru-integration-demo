@@ -16,6 +16,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy source and install the project itself
 COPY src ./src
+COPY README.md ./
 RUN uv sync --frozen --no-dev
 
 # Drop privileges
