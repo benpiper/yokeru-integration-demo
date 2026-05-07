@@ -1,6 +1,6 @@
 # Yokeru Resilient Integration Agent
 
-> **Disclaimer:** This is an independent portfolio / demo project. It is **not** affiliated with, endorsed by, or connected to [Yokeru](https://www.yokeru.io) in any way. The Yokeru name and product references are used solely to illustrate a realistic integration scenario against a hypothetical voice-agent API. No proprietary Yokeru code, credentials, or internal documentation was used in its creation.
+> **Disclaimer:** This is an independent portfolio / demo project. It is **not** affiliated with, endorsed by, or connected to [Yokeru](https://www.yokeru.ai) in any way. The Yokeru name and product references are used solely to illustrate a realistic integration scenario against a hypothetical voice-agent API. No proprietary Yokeru code, credentials, or internal documentation was used in its creation.
 
 A production integration agent that connects healthcare EHR systems (FHIR) to the Yokeru voice-agent platform. Designed around the failure modes a real care-team integration sees daily: flaky upstream APIs, partial data, webhook replays, and crash recovery.
 
