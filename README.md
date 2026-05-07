@@ -4,8 +4,6 @@
 
 A production integration agent that connects healthcare EHR systems (FHIR) to the Yokeru voice-agent platform. Designed around the failure modes a real care-team integration sees daily: flaky upstream APIs, partial data, webhook replays, and crash recovery.
 
-In healthcare, a dropped welfare check isn't a missed event — it's a vulnerable person who didn't get called. Every design choice in this repo is grounded in that constraint.
-
 ## What it does
 
 ```mermaid
@@ -30,27 +28,27 @@ sequenceDiagram
 
 ## Features
 
-- **Pluggable EHR adapters** — `BaseEHRAdapter` interface; `CernerFHIRAdapter` ships out of the box. New customer systems plug in without touching the agent core.
-- **Durable buffering** — every task is written to SQLite (WAL mode) before any outbound call. A crash mid-dispatch leaves a `PENDING` row that the next run replays.
-- **Idempotent dispatch** — the per-task `correlation_id` is sent as `Idempotency-Key`, so recovery replays cannot produce a duplicate welfare call.
-- **Targeted retries** — `tenacity`-based exponential backoff *only* on transient failures (5xx, 429, timeouts, connection errors). 4xx errors are treated as permanent and don't waste retries.
-- **Real circuit breaker** — async state machine (`CLOSED → OPEN → HALF_OPEN`) that fast-fails dispatches once an upstream goes hard-down, so the agent doesn't exhaust its connection pool or pile retries on a sick service.
-- **Inbound webhooks** — FastAPI endpoint with HMAC-SHA256 signature verification and event-ID-based deduplication. Terminal events (`call.completed` / `call.failed` / `call.no_answer`) stamp the outcome onto the originating `call_buffer` row, so dispatch and result live in one queryable place.
-- **Observability** — structured JSON logs with `correlation_id` propagated end-to-end and best-effort PHI redaction in the formatter; Prometheus `/metrics` exposing attempts, retries, breaker state, and webhook outcomes.
-- **Graceful shutdown** — SIGTERM/SIGINT trips a stop event so in-flight work cancels cleanly; the durable buffer means anything not finished replays on the next run.
-- **Configurable** — every URL, timeout, and threshold is a `YOKERU_*` environment variable via `pydantic-settings`; see `.env.example`.
+- **Pluggable EHR adapters**, `BaseEHRAdapter` interface; `CernerFHIRAdapter` ships out of the box. New customer systems plug in without touching the agent core.
+- **Durable buffering**, every task is written to SQLite (WAL mode) before any outbound call. A crash mid-dispatch leaves a `PENDING` row that the next run replays.
+- **Idempotent dispatch**, the per-task `correlation_id` is sent as `Idempotency-Key`, so recovery replays cannot produce a duplicate welfare call.
+- **Targeted retries**, `tenacity`-based exponential backoff *only* on transient failures (5xx, 429, timeouts, connection errors). 4xx errors are treated as permanent and don't waste retries.
+- **Real circuit breaker**, async state machine (`CLOSED → OPEN → HALF_OPEN`) that fast-fails dispatches once an upstream goes hard-down, so the agent doesn't exhaust its connection pool or pile retries on a sick service.
+- **Inbound webhooks**, FastAPI endpoint with HMAC-SHA256 signature verification and event-ID-based deduplication. Terminal events (`call.completed` / `call.failed` / `call.no_answer`) stamp the outcome onto the originating `call_buffer` row, so dispatch and result live in one queryable place.
+- **Observability**, structured JSON logs with `correlation_id` propagated end-to-end and best-effort PHI redaction in the formatter; Prometheus `/metrics` exposing attempts, retries, breaker state, and webhook outcomes.
+- **Graceful shutdown**, SIGTERM/SIGINT trips a stop event so in-flight work cancels cleanly; the durable buffer means anything not finished replays on the next run.
+- **Configurable**, every URL, timeout, and threshold is a `YOKERU_*` environment variable via `pydantic-settings`; see `.env.example`.
 
 ## Stack
 
 - **Python 3.12+**, packaged and run with [`uv`](https://github.com/astral-sh/uv).
-- **FastAPI** + **uvicorn** — webhook receiver and `/healthz` / `/metrics` endpoints.
-- **httpx** (async) — outbound calls to FHIR sources and the Yokeru dispatch API.
-- **tenacity** — retry policy with exponential backoff, scoped to transient errors only.
-- **pydantic** + **pydantic-settings** — payload schemas (`YokeruCallTask`, `WebhookEvent`) and `YOKERU_*` env-var configuration.
-- **SQLite** (stdlib `sqlite3`, WAL mode) — durable buffer for `call_buffer` + `webhook_events`.
-- **prometheus-client** — counters / gauges scraped at `/metrics`.
-- **pytest** + **pytest-asyncio** + **respx** — unit and integration tests with mocked HTTP.
-- **ruff** — lint + format.
+- **FastAPI** + **uvicorn**, webhook receiver and `/healthz` / `/metrics` endpoints.
+- **httpx** (async), outbound calls to FHIR sources and the Yokeru dispatch API.
+- **tenacity**, retry policy with exponential backoff, scoped to transient errors only.
+- **pydantic** + **pydantic-settings**, payload schemas (`YokeruCallTask`, `WebhookEvent`) and `YOKERU_*` env-var configuration.
+- **SQLite** (stdlib `sqlite3`, WAL mode), durable buffer for `call_buffer` + `webhook_events`.
+- **prometheus-client**, counters / gauges scraped at `/metrics`.
+- **pytest** + **pytest-asyncio** + **respx**, unit and integration tests with mocked HTTP.
+- **ruff**, lint + format.
 - **Docker** (non-root, `uv sync --frozen`) and **GitHub Actions** for CI.
 
 ## Layout
@@ -82,7 +80,7 @@ tests/               # adapter, agent (respx-mocked), breaker, db, logging, webh
 
 ```bash
 uv sync
-cp .env.example .env  # optional — defaults work against the public Cerner sandbox
+cp .env.example .env  # optional, defaults work against the public Cerner sandbox
 ```
 
 ### Run a single welfare check
@@ -118,10 +116,10 @@ uv run yokeru-agent serve --port 8000
 `demo_e2e.sh` proves the full welfare-check lifecycle in one shot. It requires the webhook server to be running in a separate terminal.
 
 ```bash
-# Terminal 1 — start the webhook server
+# Terminal 1, start the webhook server
 uv run yokeru-agent serve --port 8000
 
-# Terminal 2 — run the e2e demo
+# Terminal 2, run the e2e demo
 ./demo_e2e.sh
 ```
 
@@ -130,34 +128,34 @@ The script walks through five steps:
 | Step | What happens |
 |---|---|
 | **1** | Dispatches a welfare check for patient `12508044` from the Cerner FHIR sandbox. |
-| **2** | Queries `call_buffer` — row shows `status=DELIVERED`, `outcome=NULL`. |
+| **2** | Queries `call_buffer`, row shows `status=DELIVERED`, `outcome=NULL`. |
 | **3** | Simulates Yokeru calling back with a signed `call.completed` webhook. |
-| **4** | Queries the same row — `outcome=completed` and `completed_at` are now stamped. |
+| **4** | Queries the same row, `outcome=completed` and `completed_at` are now stamped. |
 | **5** | Shows the raw event stored in `webhook_events` for audit. |
 
 Two additional scripts are available for testing individual pieces:
 
-- **`demo_agent.sh`** — dispatches a welfare check and dumps the `call_buffer` table.
-- **`demo_webhook.sh`** — hits `/healthz`, `/metrics`, and `/webhooks/yokeru` (valid + invalid signature).
+- **`demo_agent.sh`**, dispatches a welfare check and dumps the `call_buffer` table.
+- **`demo_webhook.sh`**, hits `/healthz`, `/metrics`, and `/webhooks/yokeru` (valid + invalid signature).
 
 ## Database schema
 
 ```
 call_buffer
-├── correlation_id   TEXT PK  — UUID + Idempotency-Key
+├── correlation_id   TEXT PK , UUID + Idempotency-Key
 ├── patient_id       TEXT
-├── payload          TEXT     — JSON-serialized YokeruCallTask
-├── status           TEXT     — PENDING | DELIVERED | FAILED_PERMANENT
-├── synced           INTEGER  — 0 until terminal state
+├── payload          TEXT    , JSON-serialized YokeruCallTask
+├── status           TEXT    , PENDING | DELIVERED | FAILED_PERMANENT
+├── synced           INTEGER , 0 until terminal state
 ├── attempts         INTEGER
-├── reason           TEXT     — populated on FAILED_PERMANENT for triage
-├── outcome          TEXT     — completed | failed | no_answer (set by webhook)
-├── completed_at     TEXT     — when the terminal webhook arrived
+├── reason           TEXT    , populated on FAILED_PERMANENT for triage
+├── outcome          TEXT    , completed | failed | no_answer (set by webhook)
+├── completed_at     TEXT    , when the terminal webhook arrived
 ├── created_at       TEXT
 └── updated_at       TEXT
 
 webhook_events
-├── event_id     TEXT PK  — provider-supplied; PK enforces idempotency
+├── event_id     TEXT PK , provider-supplied; PK enforces idempotency
 ├── event_type   TEXT
 ├── received_at  TEXT
 └── payload      TEXT
@@ -201,7 +199,7 @@ What actually happens when things go wrong.
 | Failure | What the agent does |
 |---|---|
 | **Connection refused / DNS failure** | `httpx.ConnectError` propagated; logged as a transient EHR failure. Task is never buffered because there is no data to buffer. `yokeru_calls_failed_total{kind="transient"}` incremented. The next `run` or `replay` retries the same patient. |
-| **5xx / 429 from FHIR** | Same as above — logged as transient, no buffer row created. |
+| **5xx / 429 from FHIR** | Same as above, logged as transient, no buffer row created. |
 | **4xx (not 429) from FHIR** | Treated as permanent (e.g., patient deleted, invalid ID). Logged as a permanent skip; no buffer row. |
 | **Slow / hanging FHIR** | `YOKERU_HTTP_READ_TIMEOUT_S` (default 10 s) fires a `ReadTimeout`. Treated identically to connection refused. |
 
@@ -212,7 +210,7 @@ What actually happens when things go wrong.
 | Failure | What the agent does |
 |---|---|
 | **5xx / 429 / timeout / connect error** | Retried with exponential backoff up to `YOKERU_RETRY_MAX_ATTEMPTS` (default 3). If all retries fail, the task stays `status=PENDING, synced=0` in `call_buffer`. The next `uv run yokeru-agent replay` (or a `run` without `--no-replay`) re-dispatches it with the same `Idempotency-Key`, so recovery cannot duplicate a real welfare call. |
-| **4xx (not 429)** | Classified as permanent — the task is marked `FAILED_PERMANENT` with the HTTP status in the `reason` column. No retry. |
+| **4xx (not 429)** | Classified as permanent, the task is marked `FAILED_PERMANENT` with the HTTP status in the `reason` column. No retry. |
 | **Sustained outage (≥ threshold consecutive failures)** | Circuit breaker flips to `OPEN`. Subsequent dispatches in the same process are fast-failed (`BreakerOpenError`) without touching the network, leaving tasks `PENDING`. After `YOKERU_BREAKER_RESET_TIMEOUT_S` elapses, the breaker moves to `HALF_OPEN` and allows one probe request through. |
 
 ### SQLite / disk issues
@@ -236,10 +234,10 @@ What actually happens when things go wrong.
 
 | Failure | What the agent does |
 |---|---|
-| **Webhook arrives for unknown `correlation_id`** | Event is stored in `webhook_events` (for audit), but no `call_buffer` row is updated. A warning is logged. Response is still `202 Accepted` — the upstream is not at fault. |
+| **Webhook arrives for unknown `correlation_id`** | Event is stored in `webhook_events` (for audit), but no `call_buffer` row is updated. A warning is logged. Response is still `202 Accepted`, the upstream is not at fault. |
 | **Duplicate webhook (same `event_id`)** | `webhook_events.event_id` PRIMARY KEY rejects the insert. Response is `{"status":"duplicate"}`. The `call_buffer` row is not re-stamped. |
 | **Invalid HMAC signature** | Rejected with `401 Unauthorized`. `yokeru_webhooks_received_total{kind="invalid_signature"}` incremented. |
-| **Malformed JSON / schema mismatch** | Rejected with `400 Bad Request`. The upstream should not retry — the payload itself is broken. |
+| **Malformed JSON / schema mismatch** | Rejected with `400 Bad Request`. The upstream should not retry, the payload itself is broken. |
 | **Webhook server not running** | Events accumulate on the Yokeru side. When the server comes back up, Yokeru's standard retry loop replays them. The `event_id` PK ensures idempotent processing regardless of how many times the same event is delivered. |
 
 ## Observability
@@ -269,7 +267,7 @@ Prometheus metrics exposed by the webhook server:
 
 ## Inbound webhook
 
-Yokeru's voice-agent platform is the source of truth for what happened on the call. The agent runs a webhook receiver so that outcome (`completed` / `failed` / `no_answer`) flows back into the same `call_buffer` row that triggered the dispatch — closing the loop between *we asked for a welfare call* and *here is what happened*.
+Yokeru's voice-agent platform is the source of truth for what happened on the call. The agent runs a webhook receiver so that outcome (`completed` / `failed` / `no_answer`) flows back into the same `call_buffer` row that triggered the dispatch, closing the loop between *we asked for a welfare call* and *here is what happened*.
 
 ### Endpoint
 
@@ -279,7 +277,7 @@ Content-Type: application/json
 X-Yokeru-Signature: sha256=<hex>
 ```
 
-Run the receiver with `uv run yokeru-agent serve` (or via Docker — `serve` is the default `CMD`). It also exposes `GET /healthz` (liveness) and `GET /metrics` (Prometheus).
+Run the receiver with `uv run yokeru-agent serve` (or via Docker, `serve` is the default `CMD`). It also exposes `GET /healthz` (liveness) and `GET /metrics` (Prometheus).
 
 ### Payload
 
@@ -295,7 +293,7 @@ Run the receiver with `uv run yokeru-agent serve` (or via Docker — `serve` is 
 
 | Field | Type | Notes |
 |---|---|---|
-| `event_id` | string | Unique per event. Used as the dedup key — replays of the same `event_id` return `{"status":"duplicate"}` and do not re-stamp the row. |
+| `event_id` | string | Unique per event. Used as the dedup key, replays of the same `event_id` return `{"status":"duplicate"}` and do not re-stamp the row. |
 | `event_type` | enum | One of `call.completed`, `call.failed`, `call.no_answer`. Adding new event types requires a code change (see `EVENT_TYPE_TO_OUTCOME` in `src/db.py`). |
 | `correlation_id` | string | The same id the agent sent on the original dispatch as `Idempotency-Key` and `X-Correlation-Id`. This is how the receiver finds the originating row. |
 | `occurred_at` | RFC3339 timestamp | When the event happened on Yokeru's side. |
@@ -321,7 +319,7 @@ The signature must be computed over the **raw bytes** of the request body, befor
 | `202 Accepted` | `{"status":"accepted","event_id":…,"outcome":…}` | New event; outcome stamped on `call_buffer` row. |
 | `202 Accepted` | `{"status":"duplicate","event_id":…}` | `event_id` already seen; safe to retry. |
 | `202 Accepted` | `{"status":"accepted","event_id":…,"outcome":…}` + warning log | Event was new but `correlation_id` matches no buffered call (orphan); we log and accept rather than 4xx, because the upstream isn't at fault. |
-| `400 Bad Request` | `{"detail":"invalid payload"}` | JSON failed schema validation. Yokeru should *not* retry — the payload is malformed. |
+| `400 Bad Request` | `{"detail":"invalid payload"}` | JSON failed schema validation. Yokeru should *not* retry, the payload is malformed. |
 | `401 Unauthorized` | `{"detail":"invalid signature"}` | HMAC mismatch (or header missing). Yokeru should rotate / re-check the signing secret rather than retry blindly. |
 
 The receiver always returns `202` for retryable success outcomes (including duplicates), so Yokeru's standard "retry until 2xx" delivery loop is safe to use without producing double-stamps.
@@ -347,7 +345,7 @@ The agent handles patient-identifying data (phone numbers, language preferences)
 - **Transport**: outbound calls use HTTPS; the webhook server should be fronted by TLS termination (the bundled FastAPI app does not terminate TLS itself).
 - **Secrets**: `YOKERU_WEBHOOK_SIGNING_SECRET` ships with a deliberately bad default (`dev-secret-change-me`) so misconfiguration is loud during smoke tests. Production deploys must override it; the recommended pattern is a 32+ byte random value from a secret manager.
 
-PHI redaction is best-effort pattern matching — it is not a substitute for not logging the field in the first place. Treat it as a backstop, not a license.
+PHI redaction is best-effort pattern matching, it is not a substitute for not logging the field in the first place. Treat it as a backstop, not a license.
 
 ## Testing
 
@@ -379,8 +377,8 @@ Image runs as a non-root user, has a `/healthz` healthcheck, and uses `uv` with 
 The shape is right, but a few items are explicitly out of scope for the current cut and worth flagging before the next iteration:
 
 - **Replay is serial.** `replay_pending` walks `PENDING` rows one at a time and `await`s each dispatch. That is fine at the per-customer call volumes we currently target (single-digit thousands per run), but the README's framing of "thousands of calls in minutes" assumes concurrent dispatch. The straight-line fix is an `asyncio.Semaphore`-bounded `gather` over the row list, plus a `LIMIT/OFFSET` so a large backlog doesn't materialise as one giant Python list. No schema change required.
-- **`list_unsynced` → dispatch is not atomic.** The current single-process CLI reads all `PENDING` rows then dispatches them; nothing prevents a second invocation (or a future worker pool) from picking up the same row. Today's deployment model is one agent per customer host, so this is theoretical — but adding a `claimed_at` / `claimed_by` column and an `UPDATE … WHERE status='PENDING' AND claimed_at IS NULL RETURNING …` claim step is the right shape before running multiple workers concurrently against the same SQLite file.
+- **`list_unsynced` → dispatch is not atomic.** The current single-process CLI reads all `PENDING` rows then dispatches them; nothing prevents a second invocation (or a future worker pool) from picking up the same row. Today's deployment model is one agent per customer host, so this is theoretical, but adding a `claimed_at` / `claimed_by` column and an `UPDATE … WHERE status='PENDING' AND claimed_at IS NULL RETURNING …` claim step is the right shape before running multiple workers concurrently against the same SQLite file.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT, see `LICENSE`.
