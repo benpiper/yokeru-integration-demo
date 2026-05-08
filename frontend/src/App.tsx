@@ -12,10 +12,10 @@ import { usePolling } from "./hooks/usePolling";
 export function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "simulator">("dashboard");
 
-  const stableStats = useCallback(fetchStats, []);
-  const stableCalls = useCallback(fetchCalls, []);
-  const stableEvents = useCallback(fetchEvents, []);
-  const stableHealth = useCallback(fetchHealth, []);
+  const stableStats = useCallback(() => fetchStats(), []);
+  const stableCalls = useCallback(() => fetchCalls(), []);
+  const stableEvents = useCallback(() => fetchEvents(), []);
+  const stableHealth = useCallback(() => fetchHealth(), []);
 
   const { data: stats, loading: statsLoading, error: statsError } = usePolling(stableStats, 5000);
   const { data: calls, refresh: refreshCalls } = usePolling(stableCalls, 5000);

@@ -31,6 +31,7 @@ export function usePolling<T>(
 
   useEffect(() => {
     mountedRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     const id = setInterval(load, intervalMs);
     return () => {

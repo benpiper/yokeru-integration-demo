@@ -21,6 +21,7 @@ import type {
   ReplayResponse,
   Stats,
   WebhookEventRow,
+  SimulateWebhookResponse,
 } from "../types/api";
 
 export function fetchCalls(
@@ -62,8 +63,8 @@ export function replayPending(): Promise<ReplayResponse> {
   return request<ReplayResponse>("/api/replay", { method: "POST" });
 }
 
-export function simulateWebhook(correlationId: string, eventType: string): Promise<any> {
-  return request<any>("/api/simulate-webhook", {
+export function simulateWebhook(correlationId: string, eventType: string): Promise<SimulateWebhookResponse> {
+  return request<SimulateWebhookResponse>("/api/simulate-webhook", {
     method: "POST",
     body: JSON.stringify({ correlation_id: correlationId, event_type: eventType }),
   });
