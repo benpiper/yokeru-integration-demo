@@ -1,0 +1,133 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoMark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-accent), #a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.healthBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.healthBadge.ok {
+  color: var(--color-success);
+  border-color: rgba(16, 185, 129, 0.25);
+  background: var(--color-success-bg);
+}
+
+.healthBadge.degraded {
+  color: var(--color-danger);
+  border-color: rgba(239, 68, 68, 0.25);
+  background: var(--color-danger-bg);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  position: relative;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.4;
+  animation: pulse-ring 2s infinite;
+}
+
+.breakerChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-border);
+}
+
+.breakerChip.closed {
+  color: var(--color-success);
+  border-color: rgba(16, 185, 129, 0.2);
+  background: var(--color-success-bg);
+}
+
+.breakerChip.open {
+  color: var(--color-danger);
+  border-color: rgba(239, 68, 68, 0.2);
+  background: var(--color-danger-bg);
+}
+
+.breakerChip.halfOpen {
+  color: var(--color-warning);
+  border-color: rgba(245, 158, 11, 0.2);
+  background: var(--color-warning-bg);
+}
+
+.breakerChip.unknown {
+  color: var(--color-text-muted);
+}

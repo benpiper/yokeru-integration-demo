@@ -5,10 +5,13 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import ValidationError
 
+from .agent import YokeruIntegrationAgent
+from .api import register_api_routes, router as api_router
 from .db import EVENT_TYPE_TO_OUTCOME, CallBuffer
 from .logging_setup import configure_logging
 from .metrics import REGISTRY, webhooks_received_total
@@ -27,14 +30,39 @@ def _verify_signature(secret: str, body: bytes, provided: str | None) -> bool:
 
 
 def create_app(settings: Settings | None = None, buffer: CallBuffer | None = None) -> FastAPI:
+    resolved_settings = settings or get_settings()
+    resolved_buffer = buffer or CallBuffer(db_path=resolved_settings.db_path)
+
+    # Build agent for dashboard dispatch/replay (best-effort; may fail
+    # if FHIR creds aren't configured, which is fine for webhook-only mode).
+    agent: YokeruIntegrationAgent | None = None
+    try:
+        agent = YokeruIntegrationAgent.build(resolved_settings)
+    except Exception:
+        log.warning("Could not build agent for dashboard — dispatch/replay disabled")
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         configure_logging()
         yield
+        if agent:
+            await agent.aclose()
 
     app = FastAPI(title="Yokeru Integration Webhook", lifespan=lifespan)
-    app.state.settings = settings or get_settings()
-    app.state.buffer = buffer or CallBuffer(db_path=app.state.settings.db_path)
+    app.state.settings = resolved_settings
+    app.state.buffer = resolved_buffer
+
+    # CORS — allow the React dev server and common deploy origins
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Mount dashboard API
+    register_api_routes(api_router, resolved_buffer, resolved_settings, agent)
+    app.include_router(api_router)
 
     @app.get("/healthz", response_class=PlainTextResponse)
     async def healthz() -> str:

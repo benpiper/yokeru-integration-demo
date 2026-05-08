@@ -1,0 +1,15 @@
+{
+  "name": "yokeru-integration-demo",
+  "mode": "vendored",
+  "dependencies": {
+    "monkilabs/opencastle": {
+      "version": "18c6f2cf4e5cada72a9175473a9a8e1c46487751",
+      "source": "https://github.com/monkilabs/opencastle",
+      "include": {
+        "skills": [
+          "react-development"
+        ]
+      }
+    }
+  }
+}
