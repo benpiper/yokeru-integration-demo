@@ -11,7 +11,8 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import ValidationError
 
 from .agent import YokeruIntegrationAgent
-from .api import register_api_routes, router as api_router
+from .api import register_api_routes
+from .api import router as api_router
 from .db import EVENT_TYPE_TO_OUTCOME, CallBuffer
 from .logging_setup import configure_logging
 from .metrics import REGISTRY, webhooks_received_total

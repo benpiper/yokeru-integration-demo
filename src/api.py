@@ -1,15 +1,14 @@
 """REST API endpoints consumed by the React dashboard."""
 
-import asyncio
 import hashlib
 import hmac
 import json
 import logging
 import sqlite3
 import uuid
-from datetime import UTC, datetime
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
@@ -25,6 +24,7 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 
 
 # ── Response schemas ────────────────────────────────────────────────────
+
 
 class CallRow(BaseModel):
     correlation_id: str
@@ -86,6 +86,7 @@ class SimulateWebhookResponse(BaseModel):
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
+
 @contextmanager
 def _raw_conn(db_path: str) -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(db_path)
@@ -98,6 +99,7 @@ def _raw_conn(db_path: str) -> Iterator[sqlite3.Connection]:
 
 
 # ── Route factories (called by webhook.py's create_app) ─────────────────
+
 
 def register_api_routes(
     app_router: APIRouter,
@@ -215,24 +217,23 @@ def register_api_routes(
             "event_type": req.event_type,
             "correlation_id": req.correlation_id,
             "occurred_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-            "detail": {"simulated": True}
+            "detail": {"simulated": True},
         }
         body = json.dumps(payload).encode("utf-8")
         secret = settings.webhook_signing_secret.encode("utf-8")
         signature = "sha256=" + hmac.new(secret, body, hashlib.sha256).hexdigest()
-        
+
         async with httpx.AsyncClient() as client:
             try:
                 resp = await client.post(
                     "http://127.0.0.1:8000/webhooks/yokeru",
                     content=body,
-                    headers={
-                        "Content-Type": "application/json",
-                        "X-Yokeru-Signature": signature
-                    }
+                    headers={"Content-Type": "application/json", "X-Yokeru-Signature": signature},
                 )
                 resp.raise_for_status()
                 return resp.json()
             except httpx.HTTPError as e:
                 log.exception("Failed to send simulated webhook")
-                raise HTTPException(status_code=500, detail=f"Webhook simulation failed: {e}") from e
+                raise HTTPException(
+                    status_code=500, detail=f"Webhook simulation failed: {e}"
+                ) from e
