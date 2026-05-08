@@ -54,14 +54,15 @@ sequenceDiagram
 ## Stack
 
 - **Python 3.12+**, packaged and run with [`uv`](https://github.com/astral-sh/uv).
-- **FastAPI** + **uvicorn**, webhook receiver and `/healthz` / `/metrics` endpoints.
+- **React 19 + Vite + TypeScript**, for the Operations Dashboard.
+- **FastAPI** + **uvicorn**, webhook receiver, API endpoints, and `/healthz` / `/metrics`.
 - **httpx** (async), outbound calls to FHIR sources and the Yokeru dispatch API.
 - **tenacity**, retry policy with exponential backoff, scoped to transient errors only.
 - **pydantic** + **pydantic-settings**, payload schemas (`YokeruCallTask`, `WebhookEvent`) and `YOKERU_*` env-var configuration.
 - **SQLite** (stdlib `sqlite3`, WAL mode), durable buffer for `call_buffer` + `webhook_events`.
 - **prometheus-client**, counters / gauges scraped at `/metrics`.
-- **pytest** + **pytest-asyncio** + **respx**, unit and integration tests with mocked HTTP.
-- **ruff**, lint + format.
+- **pytest** + **pytest-asyncio** + **respx** / **vitest**, backend and frontend testing.
+- **ruff** / **eslint**, lint + format.
 - **Docker** (non-root, `uv sync --frozen`) and **GitHub Actions** for CI.
 
 ## Layout
@@ -150,6 +151,35 @@ Two additional scripts are available for testing individual pieces:
 
 - **`demo_agent.sh`**, dispatches a welfare check and dumps the `call_buffer` table.
 - **`demo_webhook.sh`**, hits `/healthz`, `/metrics`, and `/webhooks/yokeru` (valid + invalid signature).
+
+## Operations Dashboard
+
+The project includes a full React (Vite + TypeScript) frontend to monitor the integration agent in real-time. It provides a visual interface over the SQLite buffer and webhook endpoints.
+
+![Dashboard Overview](docs/assets/dashboard.png)
+
+### Features
+- **Live Metrics**: Polls the backend to show real-time counts of `PENDING`, `DELIVERED`, and terminal outcomes.
+- **Dispatch UI**: Triggers `agent.run_welfare_check` directly from the browser without needing the CLI.
+- **Webhook Simulator**: A dedicated tab to mock incoming `call.completed`, `call.failed`, and `call.no_answer` webhooks from Yokeru. It signs the payloads with your HMAC secret and POSTs them to the backend to test the full lifecycle.
+
+![Webhook Simulator](docs/assets/simulator.png)
+
+### Running the Dashboard
+
+The dashboard requires the FastAPI backend to be running to serve data and receive commands.
+
+1. **Start the backend** (Terminal 1):
+   ```bash
+   uv run yokeru-agent serve --port 8000
+   ```
+2. **Start the frontend** (Terminal 2):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+3. Open `http://localhost:5173` in your browser.
 
 ## Database schema
 
